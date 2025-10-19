@@ -62,8 +62,33 @@ class ValueIterationAgent(ValueEstimationAgent):
     def runValueIteration(self):
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
+    
+        for i in range(self.iterations):
+            # hold new values
+            newValues = util.Counter() 
+            
+            for state in self.mdp.getStates():
+                # get new value for state
+                newValues[state] = self.computeValueFromValues(state)
+            # update values
+            self.values = newValues
 
+    
+    def computeValueFromValues(self, state):   
+        if self.mdp.isTerminal(state):
+            return 0
+        
+        actions = self.mdp.getPossibleActions(state)
+        if len(actions) == 0:
+            return 0
+        actionValues = util.Counter()
 
+        for a in actions:
+            actionValues[a] = self.computeQValueFromValues(state, a)
+
+        # qValue of best action add to values
+        return actionValues[actionValues.argMax()]     
+                
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
@@ -77,8 +102,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qValue = 0
 
+        transitionStatesAndProbs = self.mdp.getTransitionStatesAndProbs(state, action)
+        # iterate through next states and probs
+        for nextState in transitionStatesAndProbs:
+            # equation from slide
+            qValue += nextState[1] * (self.mdp.getReward(state, action, nextState[0]) + (self.discount * self.values[nextState[0]]))
+        return qValue
     def computeActionFromValues(self, state):
         """
           The policy is the best action in the given state
@@ -89,8 +120,18 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+        actions = self.mdp.getPossibleActions(state)
+        if len(actions) == 0:
+            return None
+        actionValues = util.Counter()
 
+        for a in actions:
+            actionValues[a] = self.computeQValueFromValues(state, a)
+        # return best action
+        return actionValues.argMax()
+    
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
 
