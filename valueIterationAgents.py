@@ -169,8 +169,26 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
         """
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
 
+    def get_cyclic_state(self, i):
+        #state that i need to update
+        allStates = self.mdp.getStates()
+        numStates = len(allStates)
+        stateIndex = i % numStates
+        return allStates[stateIndex]
+
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        for i in range(self.iterations):
+            
+            state = self.get_cyclic_state(i)
+            
+            if self.mdp.isTerminal(state):
+                continue
+            
+            #helper function to compute new value from values placed in values iteration agent
+            newValue = self.computeValueFromValues(state)
+            
+            self.values[state] = newValue
 
 class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
     """
