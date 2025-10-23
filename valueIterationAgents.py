@@ -206,7 +206,59 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
         """
         self.theta = theta
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
+    
+    def initializeSweeping(self, pq):
+        # generate predecessors
+        predecessors = collections.defaultdict(set)
+        for s in self.mdp.getStates():
+            for a in self.mdp.getPossibleActions(s):
+                # get the next states and probabilities
+                for state in self.mdp.getTransitionStatesAndProbs(s, a):
+                    if state[1] > 0:
+                        predecessors[state[0]].add(s)
+
+        # priority queue with initial Bellman errors
+        for s in self.mdp.getStates():
+            if self.mdp.isTerminal(s):
+                continue
+
+            highestQ = self.computeValueFromValues(s) 
+            
+            diff = abs(self.values[s] - highestQ)
+            diff = -diff
+            pq.push(s, diff)
+            
+        return predecessors
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        pq = util.PriorityQueue()
+        
+        # get predecessors for all states and initialize priority queue
+        predecessors = self.initializeSweeping(pq)
 
+        # for each iteration find the state with highest priority
+        for i in range(self.iterations):
+            if pq.isEmpty():
+                return
+            
+            # pop a state s off the priority queue
+            s = pq.pop()
+
+            if not self.mdp.isTerminal(s):
+                # update s's value (if it is not a terminal state)
+                newValue = self.computeValueFromValues(s)
+                self.values[s] = newValue
+
+            for p in predecessors[s]:
+                if self.mdp.isTerminal(p):
+                    continue
+                    
+                # highest q-value for the predecessor p
+                highestQ_p = self.computeValueFromValues(p)
+                
+                diff = abs(self.values[p] - highestQ_p)
+                
+                # diff > theta, push p into the priority queue
+                if diff > self.theta:
+                    pq.update(p, -diff)
